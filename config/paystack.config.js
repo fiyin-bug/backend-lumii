@@ -1,3 +1,4 @@
+// config/paystack.config
 require('dotenv').config();
 
 module.exports = {

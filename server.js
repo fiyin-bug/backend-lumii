@@ -1,84 +1,48 @@
 // server.js
-require('dotenv').config();
+require('dotenv').config(); // Add this at the top
 const express = require('express');
 const cors = require('cors');
-const config = require('./config'); // Load consolidated config
-const apiRoutes = require('./routes'); // Load main API router
-const { errorHandler } = require('./middleware/error.middleware'); // Load error handler
 
-// Initialize Express App
+const paymentRoutes = require('./routes/payment.routes'); // Updated
+
 const app = express();
 
-// --- Core Middleware ---
-
-// Enable Cross-Origin Resource Sharing (CORS)
-// Restrict to specific origin (your frontend URL) in production
-app.use(cors({
-  origin: config.clientUrl,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true, // If you need to handle cookies/sessions later
-  optionsSuccessStatus: 200
-}));
-
-// Parse JSON request bodies
-app.use(express.json({ limit: '10kb' })); // Limit payload size
-
-// Parse URL-encoded request bodies (optional, usually needed for form submissions)
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
-// --- API Routes ---
-// Mount all API routes under the /api prefix
-app.use('/api', apiRoutes);
-
-// --- Default Route (Optional) ---
-// Handles requests to the root URL
-app.get('/', (req, res) => {
-  res.status(200).json({
-      message: `Lumis Minimal Backend API is running.`,
-      environment: config.env,
-      timestamp: new Date().toISOString()
-  });
+// Log environment variables for debugging
+console.log('Environment Variables:', {
+  CLIENT_URL: process.env.CLIENT_URL,
+  PORT: process.env.PORT,
 });
 
-// --- Catch-all for Undefined Routes (404) ---
-// Place this after all valid routes
-app.use((req, res, next) => {
-    res.status(404).json({ success: false, message: `Not Found - Cannot ${req.method} ${req.originalUrl}` });
+// CORS configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173'].filter(Boolean);
+    console.log('Request Origin:', origin, 'Allowed Origins:', allowedOrigins);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+
+app.use('/api/payment', paymentRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-
-// --- Global Error Handling Middleware ---
-// Must be the LAST middleware defined
-app.use(errorHandler);
-
-
-// --- Start Server ---
-try {
-    const server = app.listen(config.port, () => {
-      console.log(`\n🚀 Minimal server started successfully!`);
-      console.log(`      Mode: ${config.env}`);
-      console.log(`      Port: ${config.port}`);
-      console.log(`      API URL: ${config.apiBaseUrl}`);
-      console.log(`      Allowed Client: ${config.clientUrl}\n`);
-    });
-
-     // Graceful shutdown handling (optional but good practice)
-    process.on('SIGTERM', () => {
-        console.log('SIGTERM signal received: closing HTTP server');
-        server.close(() => {
-            console.log('HTTP server closed');
-            process.exit(0);
-        });
-    });
-     process.on('SIGINT', () => {
-        console.log('SIGINT signal received: closing HTTP server');
-        server.close(() => {
-            console.log('HTTP server closed');
-            process.exit(0);
-        });
-    });
-
-} catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1); // Exit with failure code
-}
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Minimal server started successfully!
+    Mode: development
+    Port: ${PORT}
+    API URL: http://localhost:${PORT}
+    Allowed Client: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+});
