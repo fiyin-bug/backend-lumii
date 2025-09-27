@@ -16,7 +16,7 @@ console.log('Environment Variables:', {
 // CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'https://lumii-jthu.vercel.app'].filter(Boolean);
+    const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'https://lumii-jthu.vercel.app', 'https://lumiiprettycollection.com'].filter(Boolean);
     console.log('Request Origin:', origin, 'Allowed Origins:', allowedOrigins);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
