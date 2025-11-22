@@ -2,8 +2,11 @@
 require('dotenv').config(); // Add this at the top
 const express = require('express');
 const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
 
 const paymentRoutes = require('./routes/payment.routes'); // Updated
+const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
 
@@ -16,7 +19,7 @@ console.log('Environment Variables:', {
 // CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'https://lumii-jthu.vercel.app', 'https://lumiprettycollection.com'].filter(Boolean);
+    const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5177', 'https://lumii-jthu.vercel.app', 'https://lumiprettycollection.com'].filter(Boolean);
     console.log('Request Origin:', origin, 'Allowed Origins:', allowedOrigins);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -38,11 +41,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Minimal server started successfully!
+
+// SSL options
+const sslOptions = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem'),
+};
+
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`🚀 HTTPS server started successfully!
     Mode: development
     Port: ${PORT}
-    API URL: http://localhost:${PORT}
-    Allowed Client: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+    API URL: https://localhost:${PORT}
+    Allowed Client: ${process.env.CLIENT_URL || 'http://localhost:5177'}`);
 });
