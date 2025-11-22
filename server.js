@@ -1,11 +1,11 @@
-// server.js
-require('dotenv').config(); // Add this at the top
+// server.js - Local development server only
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const https = require('https');
 const fs = require('fs');
 
-const paymentRoutes = require('./routes/payment.routes'); // Updated
+const paymentRoutes = require('./routes/payment.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -16,7 +16,7 @@ console.log('Environment Variables:', {
   PORT: process.env.PORT,
 });
 
-// CORS configuration
+// CORS configuration for local development
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5177', 'https://lumii-jthu.vercel.app', 'https://lumiprettycollection.com'].filter(Boolean);
@@ -44,6 +44,7 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Local development with HTTPS
 const PORT = process.env.PORT || 5000;
 
 // SSL options
@@ -53,7 +54,7 @@ const sslOptions = {
 };
 
 https.createServer(sslOptions, app).listen(PORT, () => {
-  console.log(`🚀 HTTPS server started successfully!
+  console.log(`🚀 Local HTTPS server started successfully!
     Mode: development
     Port: ${PORT}
     API URL: https://localhost:${PORT}

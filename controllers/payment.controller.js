@@ -1,8 +1,7 @@
 const { initializeTransaction, verifyTransaction } = require('../services/paystack.service');
 const { sendBusinessNotification, sendBuyerInvoice } = require('../services/email.service');
-
-// In-memory cache to track processed transactions
-const processedTransactions = new Set();
+const { db, paystackConfig } = require('../config');
+const crypto = require('crypto');
 
 exports.initializeCheckout = async (req, res) => {
   try {
@@ -46,6 +45,19 @@ exports.initializeCheckout = async (req, res) => {
     }
     const callbackUrl = `${apiBaseUrl}/payment/callback`;
 
+    // Save order to database
+    try {
+      await db.run(
+        `INSERT INTO orders (reference, email, first_name, last_name, phone, shipping_address, cart_items, total_amount, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [reference, email, firstName, lastName, phone, JSON.stringify(shippingAddress), JSON.stringify(items), amountInKobo, 'pending']
+      );
+      console.log(`Order saved to database with reference: ${reference}`);
+    } catch (dbError) {
+      console.error('Error saving order to database:', dbError);
+      return res.status(500).json({ success: false, message: 'Failed to save order.' });
+    }
+
     const result = await initializeTransaction(email, amountInKobo, reference, callbackUrl, metadata);
 
     if (result.success) {
@@ -54,6 +66,8 @@ exports.initializeCheckout = async (req, res) => {
         authorizationUrl: result.data.authorization_url,
       });
     } else {
+      // Update order status to failed if Paystack initialization fails
+      await db.run(`UPDATE orders SET status = 'failed' WHERE reference = ?`, [reference]);
       res.status(500).json({ success: false, message: result.message });
     }
   } catch (error) {
@@ -88,20 +102,54 @@ exports.verifyPaymentStatus = async (req, res) => {
     }
 
     console.log(`Frontend requesting verification for reference: ${reference}`);
+
+    // Check if payment already processed
+    const existingPayment = await db.get(`SELECT * FROM payments WHERE reference = ?`, [reference]);
+    if (existingPayment && existingPayment.status === 'success') {
+      console.log(`Transaction ${reference} already processed. Skipping email notifications.`);
+      return res.json({ success: true, message: 'Payment already verified.', data: existingPayment });
+    }
+
     const result = await verifyTransaction(reference);
 
     if (result.success) {
-      if (processedTransactions.has(reference)) {
-        console.log(`Transaction ${reference} already processed. Skipping email notifications.`);
-        return res.json({ success: true, message: 'Payment already verified.', data: result.data });
-      }
+      // Update order status to paid
+      await db.run(`UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE reference = ?`, [reference]);
+
+      // Save payment details
+      const paymentData = {
+        reference: result.data.reference,
+        paystack_id: result.data.id,
+        amount: result.data.amount,
+        currency: result.data.currency,
+        status: 'success',
+        gateway_response: result.data.gateway_response,
+        paid_at: result.data.paid_at
+      };
+
+      await db.run(
+        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [paymentData.reference, paymentData.paystack_id, paymentData.amount, paymentData.currency, paymentData.status, paymentData.gateway_response, paymentData.paid_at]
+      );
 
       console.log(`Verification successful for ref ${reference}. Order Details:`, JSON.stringify(result.data, null, 2));
       await sendBusinessNotification(result.data);
       await sendBuyerInvoice(result.data);
-      processedTransactions.add(reference);
       res.json({ success: true, message: 'Payment verified successfully.', data: result.data });
     } else {
+      // Update order status to failed
+      await db.run(`UPDATE orders SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE reference = ?`, [reference]);
+
+      // Save failed payment details if available
+      if (result.data) {
+        await db.run(
+          `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [result.data.reference || reference, result.data.id || null, result.data.amount || 0, result.data.currency || 'NGN', 'failed', result.data.gateway_response || result.message, result.data.paid_at || null]
+        );
+      }
+
       console.warn(`Verification failed for ref ${reference}. Message: ${result.message}`);
       res.status(400).json({ success: false, message: result.message, data: result.data });
     }
@@ -111,8 +159,75 @@ exports.verifyPaymentStatus = async (req, res) => {
   }
 };
 
+exports.handlePaystackWebhook = async (req, res) => {
+  try {
+    // Verify webhook signature
+    const secret = paystackConfig.paystackSecretKey;
+    const signature = req.headers['x-paystack-signature'];
+    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+
+    if (hash !== signature) {
+      console.error('Invalid webhook signature');
+      return res.status(400).send('Invalid signature');
+    }
+
+    const event = req.body;
+
+    console.log(`Received Paystack webhook: ${event.event}`);
+
+    if (event.event === 'charge.success') {
+      const { reference } = event.data;
+
+      // Update order status to paid
+      await db.run(`UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE reference = ?`, [reference]);
+
+      // Save payment details
+      const paymentData = {
+        reference: event.data.reference,
+        paystack_id: event.data.id,
+        amount: event.data.amount,
+        currency: event.data.currency,
+        status: 'success',
+        gateway_response: event.data.gateway_response,
+        paid_at: event.data.paid_at
+      };
+
+      await db.run(
+        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [paymentData.reference, paymentData.paystack_id, paymentData.amount, paymentData.currency, paymentData.status, paymentData.gateway_response, paymentData.paid_at]
+      );
+
+      // Get order details for email notifications
+      const order = await db.get(`SELECT * FROM orders WHERE reference = ?`, [reference]);
+      if (order) {
+        const orderData = {
+          ...event.data,
+          metadata: {
+            customer_name: `${order.first_name} ${order.last_name}`,
+            customer_email: order.email,
+            customer_phone: order.phone,
+            shipping_address: JSON.parse(order.shipping_address),
+            cart_items: JSON.parse(order.cart_items)
+          }
+        };
+
+        console.log(`Webhook: Payment successful for ref ${reference}. Sending notifications.`);
+        await sendBusinessNotification(orderData);
+        await sendBuyerInvoice(orderData);
+      }
+    }
+
+    res.status(200).send('Webhook received');
+  } catch (error) {
+    console.error('Error handling Paystack webhook:', error);
+    res.status(500).send('Webhook error');
+  }
+};
+
 module.exports = {
   initializeCheckout: exports.initializeCheckout,
   handlePaystackCallback: exports.handlePaystackCallback,
   verifyPaymentStatus: exports.verifyPaymentStatus,
+  handlePaystackWebhook: exports.handlePaystackWebhook,
 };

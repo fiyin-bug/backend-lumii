@@ -15,6 +15,10 @@ router.get('/callback', paymentController.handlePaystackCallback);
 // GET /api/payment/verify
 // This route is called BY THE FRONTEND after the browser is redirected to the frontend callback page.
 // Its controller function (verifyPaymentStatus) performs the actual Paystack verification.
-router.get('/verify', paymentController.verifyPaymentStatus); // <-- ADD THIS ROUTE
+router.get('/verify', paymentController.verifyPaymentStatus);
+
+// POST /api/payment/webhook
+// This route receives webhooks from Paystack for payment events
+router.post('/webhook', paymentController.handlePaystackWebhook);
 
 module.exports = router;
