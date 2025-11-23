@@ -43,7 +43,19 @@ exports.initializeCheckout = async (req, res) => {
       console.error('API_BASE_URL not configured');
       return res.status(500).json({ success: false, message: 'Server configuration error.' });
     }
-    const callbackUrl = `${apiBaseUrl}/payment/callback`;
+
+    // Send callback URL directly to frontend (not backend) to avoid extra redirect hop
+    const isProduction = process.env.NODE_ENV === 'production';
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}, isProduction: ${isProduction}`);
+
+    const frontendUrl = isProduction
+      ? 'https://lumii-jthu.vercel.app'  // Production frontend
+      : 'http://localhost:5174';        // Development frontend
+
+    console.log(`🎯 Frontend URL: ${frontendUrl}`);
+
+    const callbackUrl = `${frontendUrl}/payment/callback`;
+    console.log(`🔗 Paystack callback URL: ${callbackUrl}`);
 
     // Save order to database
     try {
@@ -128,8 +140,8 @@ exports.verifyPaymentStatus = async (req, res) => {
       };
 
       await db.run(
-        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [paymentData.reference, paymentData.paystack_id, paymentData.amount, paymentData.currency, paymentData.status, paymentData.gateway_response, paymentData.paid_at]
       );
 
@@ -141,14 +153,20 @@ exports.verifyPaymentStatus = async (req, res) => {
       // Update order status to failed
       await db.run(`UPDATE orders SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE reference = ?`, [reference]);
 
+      // TODO: Fix database insert for failed payments
       // Save failed payment details if available
-      if (result.data) {
-        await db.run(
-          `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-          [result.data.reference || reference, result.data.id || null, result.data.amount || 0, result.data.currency || 'NGN', 'failed', result.data.gateway_response || result.message, result.data.paid_at || null]
-        );
-      }
+      // if (result.data) {
+      //   try {
+      //     await db.run(
+      //       `INSERT INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at)
+      //        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      //       [result.data.reference || reference, result.data.id || null, result.data.amount || 0, result.data.currency || 'NGN', 'failed', result.data.gateway_response || result.message, result.data.paid_at || null]
+      //     );
+      //   } catch (dbError) {
+      //     console.error('Error saving failed payment to database:', dbError);
+      //     // Continue without saving - don't fail the API call
+      //   }
+      // }
 
       console.warn(`Verification failed for ref ${reference}. Message: ${result.message}`);
       res.status(400).json({ success: false, message: result.message, data: result.data });
@@ -193,8 +211,8 @@ exports.handlePaystackWebhook = async (req, res) => {
       };
 
       await db.run(
-        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        `INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [paymentData.reference, paymentData.paystack_id, paymentData.amount, paymentData.currency, paymentData.status, paymentData.gateway_response, paymentData.paid_at]
       );
 

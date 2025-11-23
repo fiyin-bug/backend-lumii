@@ -63,14 +63,30 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV === 'development') {
-  // HTTPS for local development
+  // Development: Both HTTP and HTTPS servers
   const sslOptions = {
     key: fs.readFileSync('key.pem'),
     cert: fs.readFileSync('cert.pem'),
   };
 
+  const httpPort = 4000; // HTTP port for Paystack callbacks
+
+  // HTTPS server for API calls
   https.createServer(sslOptions, app).listen(PORT, () => {
-    console.log(`🚀 Local HTTPS server running at https://localhost:${PORT}`);
+    console.log(`🚀 Development HTTPS server running at https://localhost:${PORT}`);
+    console.log(`API calls should use: https://localhost:${PORT}/api/...`);
+  });
+
+  // HTTP server for Paystack callbacks
+  const httpApp = express();
+  httpApp.use(cors(corsOptions));
+  httpApp.use(express.json());
+  httpApp.use('/api/payment', paymentRoutes);
+  httpApp.use(errorHandler);
+
+  httpApp.listen(httpPort, () => {
+    console.log(`🚀 Development HTTP server running at http://localhost:${httpPort}`);
+    console.log(`Paystack callbacks use: http://localhost:${httpPort}/payment/callback`);
     console.log(`Allowed frontend origins: ${allowedOrigins.join(', ')}`);
   });
 } else {
