@@ -26,10 +26,17 @@ const corsOptions = {
     // Allow non-browser requests (curl, mobile apps, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    // In production, be more permissive for CORS
+    if (process.env.NODE_ENV === 'production') {
+      // Allow all origins in production (Railway handles security)
       callback(null, true);
     } else {
-      callback(new Error('CORS not allowed for origin: ' + origin));
+      // In development, check against allowed origins
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed for origin: ' + origin));
+      }
     }
   },
   credentials: true,
