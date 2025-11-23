@@ -18,6 +18,7 @@ const allowedOrigins = [
   'http://localhost:5173',             // Alternate dev port
   'https://lumii-jthu.vercel.app',     // Frontend prod
   'https://lumiprettycollection.com',  // Frontend prod
+  'https://backend-lumii-production.up.railway.app'  // Backend prod
 ];
 
 const corsOptions = {

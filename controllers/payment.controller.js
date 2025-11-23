@@ -46,16 +46,11 @@ exports.initializeCheckout = async (req, res) => {
 
     // Send callback URL directly to frontend (not backend) to avoid extra redirect hop
     const isProduction = process.env.NODE_ENV === 'production';
-    console.log(`🌍 Environment: ${process.env.NODE_ENV}, isProduction: ${isProduction}`);
-
     const frontendUrl = isProduction
       ? 'https://lumii-jthu.vercel.app'  // Production frontend
       : 'http://localhost:5174';        // Development frontend
 
-    console.log(`🎯 Frontend URL: ${frontendUrl}`);
-
     const callbackUrl = `${frontendUrl}/payment/callback`;
-    console.log(`🔗 Paystack callback URL: ${callbackUrl}`);
 
     // Save order to database
     try {
