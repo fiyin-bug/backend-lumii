@@ -138,7 +138,7 @@ Payment Details:
           </div>
           <div class="footer">
             <p>Thank you for choosing Lumis Pretty Collection 💎</p>
-            <p><a href="http://localhost:5173">Visit our website</a></p>
+            <p><a href="http://localhost:5174">Visit our website</a></p>
           </div>
         </div>
       </body>
@@ -258,7 +258,7 @@ Best regards,\nLumis Pretty Collection 💎
           </div>
           <div class="footer">
             <p>Thank you for choosing Lumis Pretty Collection 💎</p>
-            <p><a href="http://localhost:5173">Visit our website</a></p>
+            <p><a href="http://localhost:5174">Visit our website</a></p>
           </div>
         </div>
       </body>

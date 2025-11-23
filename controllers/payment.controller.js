@@ -79,7 +79,7 @@ exports.initializeCheckout = async (req, res) => {
 exports.handlePaystackCallback = async (req, res) => {
   const { reference } = req.query;
 
-  const frontendBaseUrl = 'http://localhost:5173';
+  const frontendBaseUrl = 'http://localhost:5174';
   const frontendCallbackPath = '/payment/callback';
   const frontendCallbackUrl = `${frontendBaseUrl}${frontendCallbackPath}?reference=${reference}`;
 
