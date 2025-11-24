@@ -1,9 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// For Vercel deployment, use in-memory database since file storage isn't supported
-if (process.env.VERCEL) {
-  console.log('Using in-memory SQLite database for Vercel deployment');
+// For production deployments (Railway, Vercel), use in-memory database since file storage isn't supported
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  console.log('Using in-memory SQLite database for production deployment');
   var db = new sqlite3.Database(':memory:', (err) => {
     if (err) {
       console.error('Error opening in-memory database:', err.message);
