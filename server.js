@@ -98,9 +98,11 @@ if (process.env.NODE_ENV === 'development') {
     console.log(`Allowed frontend origins: ${allowedOrigins.join(', ')}`);
   });
 } else {
-  // Production (Railway)
-  app.listen(PORT, () => {
-    console.log(`🚀 Production server running on port ${PORT}`);
+  // Production (Railway) - listen on Railway's assigned port
+  const port = process.env.PORT || 8080; // Railway typically uses 8080
+  app.listen(port, () => {
+    console.log(`🚀 Production server running on port ${port}`);
+    console.log(`Railway PORT env var: ${process.env.PORT}`);
     console.log(`Allowed frontend origins: ${allowedOrigins.join(', ')}`);
   });
 }
