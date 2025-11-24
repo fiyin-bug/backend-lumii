@@ -38,19 +38,14 @@ exports.initializeCheckout = async (req, res) => {
       return total + (item.price * item.quantity * 100);
     }, 0);
 
-    const { apiBaseUrl } = require('../config');
+    const { apiBaseUrl, clientUrl } = require('../config');
     if (!apiBaseUrl) {
       console.error('API_BASE_URL not configured');
       return res.status(500).json({ success: false, message: 'Server configuration error.' });
     }
 
-    // Send callback URL directly to frontend (not backend) to avoid extra redirect hop
-    const isProduction = process.env.NODE_ENV === 'production';
-    const frontendUrl = isProduction
-      ? 'https://lumii-jthu.vercel.app'  // Production frontend
-      : 'http://localhost:5174';        // Development frontend
-
-    const callbackUrl = `${frontendUrl}/payment/callback`;
+    // Send callback URL directly to frontend using CLIENT_URL from environment
+    const callbackUrl = `${clientUrl}/payment/callback`;
 
     // Save order to database
     try {
