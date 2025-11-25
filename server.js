@@ -1,4 +1,23 @@
 // server.js
+
+
+
+
+app.use(cors({
+  origin: [
+    "https://lumiprettycollection.com",
+    "https://lumii-jthu.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:5174"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+}));
+
+// THIS IS IMPORTANT
+app.options('*', cors());
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

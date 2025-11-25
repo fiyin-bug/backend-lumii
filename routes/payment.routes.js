@@ -1,24 +1,44 @@
 const express = require('express');
+const cors = require('cors');
 const paymentController = require('../controllers/payment.controller');
 
 const router = express.Router();
 
-// POST /api/payment/initialize
-// Route to initialize the payment process
-router.post('/initialize', paymentController.initializeCheckout);
+// Define CORS options only for payment routes
+const paymentCors = cors({
+  origin: [
+    "https://lumiprettycollection.com",
+    "https://lumii-jthu.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:5174"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+});
 
-// GET /api/payment/callback
-// This route receives the initial redirect from Paystack
-// Its controller function (handlePaystackCallback) should redirect the browser to the frontend callback page.
-router.get('/callback', paymentController.handlePaystackCallback);
+// ---------------------------
+// Allow preflight on all routes
+// ---------------------------
+router.options('*', paymentCors);
 
-// GET /api/payment/verify
-// This route is called BY THE FRONTEND after the browser is redirected to the frontend callback page.
-// Its controller function (verifyPaymentStatus) performs the actual Paystack verification.
-router.get('/verify', paymentController.verifyPaymentStatus);
+// ---------------------------
+// PAYMENT ROUTES
+// ---------------------------
 
-// POST /api/payment/webhook
-// This route receives webhooks from Paystack for payment events
+// Preflight + POST /initialize
+router.options('/initialize', paymentCors);
+router.post('/initialize', paymentCors, paymentController.initializeCheckout);
+
+// GET /callback (Redirect from Paystack)
+router.get('/callback', paymentCors, paymentController.handlePaystackCallback);
+
+// GET /verify (Frontend verification)
+router.get('/verify', paymentCors, paymentController.verifyPaymentStatus);
+
+// Preflight + POST webhook
+router.options('/webhook', paymentCors);
 router.post('/webhook', paymentController.handlePaystackWebhook);
 
 module.exports = router;
+
