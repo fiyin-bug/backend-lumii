@@ -4,10 +4,11 @@ const paymentController = require('../controllers/payment.controller');
 
 const router = express.Router();
 
-// Define CORS options only for payment routes
-const paymentCors = cors({
+// CORS options for payment routes
+const corsOptions = {
   origin: [
     "https://lumiprettycollection.com",
+    "https://www.lumiprettycollection.com",
     "https://lumii-jthu.vercel.app",
     "http://localhost:5173",
     "http://localhost:5174"
@@ -15,30 +16,24 @@ const paymentCors = cors({
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true,
-});
+};
 
-// ---------------------------
-// Allow preflight on all routes
-// ---------------------------
-router.options('*', paymentCors);
+// Apply CORS to all routes in this router
+router.use(cors(corsOptions));
 
 // ---------------------------
 // PAYMENT ROUTES
 // ---------------------------
 
-// Preflight + POST /initialize
-router.options('/initialize', paymentCors);
-router.post('/initialize', paymentCors, paymentController.initializeCheckout);
+router.post('/initialize', paymentController.initializeCheckout);
 
 // GET /callback (Redirect from Paystack)
-router.get('/callback', paymentCors, paymentController.handlePaystackCallback);
+router.get('/callback', paymentController.handlePaystackCallback);
 
 // GET /verify (Frontend verification)
-router.get('/verify', paymentCors, paymentController.verifyPaymentStatus);
+router.get('/verify', paymentController.verifyPaymentStatus);
 
-// Preflight + POST webhook
-router.options('/webhook', paymentCors);
+// POST webhook
 router.post('/webhook', paymentController.handlePaystackWebhook);
 
 module.exports = router;
-
