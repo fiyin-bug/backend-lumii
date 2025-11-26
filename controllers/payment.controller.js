@@ -1,6 +1,7 @@
 const { initializeTransaction, verifyTransaction } = require('../services/paystack.service');
 const { sendBusinessNotification, sendBuyerInvoice } = require('../services/email.service');
-const { db, paystackConfig } = require('../config');
+const db = require('../config/db.config');
+const { paystackConfig } = require('../config/paystack.config');
 const crypto = require('crypto');
 
 exports.initializeCheckout = async (req, res) => {
