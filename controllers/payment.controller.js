@@ -13,8 +13,8 @@ exports.initializeCheckout = async (req, res) => {
 
     // Validate items
     for (const item of items) {
-      if (!item.name || typeof item.price !== 'number' || typeof item.quantity !== 'number') {
-        return res.status(400).json({ success: false, message: 'Invalid item data.' });
+      if (!item.name || typeof item.price !== 'number' || item.price <= 0 || typeof item.quantity !== 'number' || item.quantity <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid item data: name required, price and quantity must be positive numbers.' });
       }
     }
 
@@ -31,18 +31,17 @@ exports.initializeCheckout = async (req, res) => {
       customer_email: email,
       customer_phone: phone,
       shipping_address: shippingAddress,
-      cart_items: items,
     };
 
     const amountInKobo = items.reduce((total, item) => {
       return total + (item.price * item.quantity * 100);
     }, 0);
 
-    const { apiBaseUrl, clientUrl } = require('../config');
-    if (!apiBaseUrl) {
-      console.error('API_BASE_URL not configured');
-      return res.status(500).json({ success: false, message: 'Server configuration error.' });
+    if (amountInKobo < 10000) {
+      return res.status(400).json({ success: false, message: 'Minimum order amount is ₦100.' });
     }
+
+    const { apiBaseUrl, clientUrl } = require('../config');
 
     // Send callback URL directly to frontend using CLIENT_URL from environment
     const callbackUrl = `${clientUrl}/payment/callback`;
