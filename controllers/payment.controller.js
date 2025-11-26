@@ -31,7 +31,6 @@ exports.initializeCheckout = async (req, res) => {
       customer_name: `${firstName} ${lastName}`,
       customer_email: email,
       customer_phone: phone,
-      shipping_address: shippingAddress,
     };
 
     const amountInKobo = items.reduce((total, item) => {
