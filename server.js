@@ -12,27 +12,36 @@ const { errorHandler } = require('./middleware/error.middleware');
 const app = express();
 
 // ------------------------
-// FIXED CORS CONFIGURATION
+// CORS CONFIGURATION (FIXED)
 // ------------------------
+const allowedOrigins = [
+  "https://lumiprettycollection.com",
+  "https://lumii-jthu.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175"  // <-- ADDED THIS
+];
+
 const corsOptions = {
-  origin: [
-    "https://lumiprettycollection.com",
-    "https://lumii-jthu.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:5174"
-  ],
+  origin: function (origin, callback) {
+    // Allow server-to-server and tools with no origin
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("CORS Not Allowed: " + origin));
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));  // IMPORTANT for preflight OPTIONS
+app.options("*", cors(corsOptions)); // Preflight
 
 app.use(express.json());
 
 // ------------------------
-// Routes
+// ROUTES
 // ------------------------
 app.use("/api/payment", paymentRoutes);
 
@@ -45,46 +54,44 @@ app.get("/api/health", (req, res) => {
 });
 
 // ------------------------
-// Error Handling Middleware
+// ERROR HANDLER
 // ------------------------
 app.use(errorHandler);
 
 // ------------------------
-// Server Start
+// SERVER START
 // ------------------------
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
+const ENV = process.env.NODE_ENV || "production";
 
-if (process.env.NODE_ENV === "development") {
+if (ENV === "development") {
 
-  // Development HTTPS server
+  // Local HTTPS for API
   const sslOptions = {
     key: fs.readFileSync("key.pem"),
     cert: fs.readFileSync("cert.pem"),
   };
 
-  const httpPort = 4000;
-
-  // HTTPS for development API
   https.createServer(sslOptions, app).listen(PORT, () => {
     console.log(`🚀 Dev HTTPS server: https://localhost:${PORT}`);
   });
 
-  // HTTP server for Paystack callbacks
+  // Standard HTTP for Paystack callbacks
+  const CALLBACK_PORT = 4000;
   const httpApp = express();
   httpApp.use(cors(corsOptions));
   httpApp.use(express.json());
   httpApp.use("/api/payment", paymentRoutes);
   httpApp.use(errorHandler);
 
-  httpApp.listen(httpPort, () => {
-    console.log(`🚀 Dev HTTP callback server: http://localhost:${httpPort}`);
+  httpApp.listen(CALLBACK_PORT, () => {
+    console.log(`🚀 Dev HTTP callback server: http://localhost:${CALLBACK_PORT}`);
   });
 
 } else {
 
-  // Production (Railway)
-  const port = process.env.PORT || 8080;
-  app.listen(port, () => {
-    console.log(`🚀 Production server running on port ${port}`);
+  // Railway Production Server
+  app.listen(PORT, () => {
+    console.log(`🚀 Production server running on port ${PORT}`);
   });
 }

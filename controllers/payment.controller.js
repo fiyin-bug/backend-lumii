@@ -2,6 +2,7 @@ const { initializeTransaction, verifyTransaction } = require('../services/paysta
 const { sendBusinessNotification, sendBuyerInvoice } = require('../services/email.service');
 const db = require('../config/db.config');
 const { paystackConfig } = require('../config/paystack.config');
+const { clientUrl } = require('../config');
 const crypto = require('crypto');
 
 exports.initializeCheckout = async (req, res) => {
@@ -80,12 +81,11 @@ exports.initializeCheckout = async (req, res) => {
 exports.handlePaystackCallback = async (req, res) => {
   const { reference } = req.query;
 
-  const frontendBaseUrl = 'http://localhost:5174';
   const frontendCallbackPath = '/payment/callback';
-  const frontendCallbackUrl = `${frontendBaseUrl}${frontendCallbackPath}?reference=${reference}`;
+  const frontendCallbackUrl = `${clientUrl}${frontendCallbackPath}?reference=${reference}`;
 
   if (!reference) {
-    const frontendFailureUrl = `${frontendBaseUrl}${frontendCallbackPath}?status=failed&message=no_reference`;
+    const frontendFailureUrl = `${clientUrl}${frontendCallbackPath}?status=failed&message=no_reference`;
     console.warn(`Received Paystack callback without reference. Redirecting to frontend failure URL: ${frontendFailureUrl}`);
     return res.redirect(302, frontendFailureUrl);
   }

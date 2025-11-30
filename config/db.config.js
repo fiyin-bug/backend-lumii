@@ -1,8 +1,21 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// For production deployments (Railway, Vercel), use in-memory database since file storage isn't supported
-if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+// For Vercel serverless functions, use SQLite in /tmp directory
+// Note: Data won't persist between function calls in serverless
+if (process.env.VERCEL) {
+  console.log('Using Vercel-compatible SQLite database in /tmp');
+  const dbPath = path.join('/tmp', 'lumis-database.sqlite');
+  var db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Error opening Vercel database:', err.message);
+    } else {
+      console.log('Connected to Vercel SQLite database.');
+      initializeTables();
+    }
+  });
+} else if (process.env.NODE_ENV === 'production') {
+  // For Railway or other production deployments
   console.log('Using in-memory SQLite database for production deployment');
   var db = new sqlite3.Database(':memory:', (err) => {
     if (err) {
