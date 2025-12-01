@@ -1,6 +1,6 @@
 // services/paystack.service.js
-const axios = require('axios');
-const { paystackSecretKey } = require('../config/paystack.config');
+const axios = require("axios");
+const { paystackSecretKey } = require("../config/paystack.config");
 
 const PAYSTACK_API_URL = 'https://api.paystack.co';
 

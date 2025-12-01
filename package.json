@@ -1,6 +1,5 @@
 {
   "name": "lumis-minimal-backend",
-  "version": "1.0.0",
   "description": "Minimal backend for Lumis Jewelry checkout",
   "main": "server.js",
   "scripts": {

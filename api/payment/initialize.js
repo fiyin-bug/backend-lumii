@@ -1,31 +1,35 @@
-const { initializeTransaction } = require('../../services/paystack.service');
-const db = require('../../config/db.config');
-const { paystackConfig } = require('../../config/paystack.config');
-const { clientUrl } = require('../../config');
+import axios from 'axios';
 
 export default async function handler(req, res) {
-  // Enable CORS
-  const allowedOrigins = ['https://lumiprettycollection.com', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+  // CORS
+  const allowedOrigins = [
+    "https://lumiprettycollection.com",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175"
+  ];
+
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader("Access-Control-Allow-Origin", origin);
   }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') {
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 
   try {
     const { email, firstName, lastName, phone, shippingAddress, items } = req.body;
 
     // Validation
-    if (!email || !firstName || !lastName || !phone || !shippingAddress || !items || !Array.isArray(items) || !items.length) {
+    if (!email || !firstName || !lastName || !phone || !shippingAddress || !items?.length) {
       return res.status(400).json({ success: false, message: 'Missing required fields or empty cart.' });
     }
 
@@ -35,21 +39,14 @@ export default async function handler(req, res) {
       }
     }
 
-    const amountInKobo = items.reduce((total, item) => {
-      return total + (item.price * item.quantity * 100);
-    }, 0);
+    const amountInKobo = items.reduce((sum, item) => sum + item.price * item.quantity * 100, 0);
 
     if (amountInKobo < 10000) {
       return res.status(400).json({ success: false, message: 'Minimum order amount is ₦100.' });
     }
 
     // Generate reference
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const random4 = Math.random().toString(36).substr(2, 4);
-    const reference = `LUMIS-${day}.${month}.${year}-${random4}`;
+    const reference = "LUMIS-" + Date.now();
 
     const metadata = {
       customer_name: `${firstName} ${lastName}`,
@@ -57,34 +54,36 @@ export default async function handler(req, res) {
       customer_phone: phone,
     };
 
-    const callbackUrl = `${clientUrl}/payment/callback`;
+    const callbackUrl = `${process.env.CLIENT_URL || 'https://lumiprettycollection.com'}/payment/callback`;
 
-    // Save order to database
-    try {
-      await db.run(
-        `INSERT INTO orders (reference, email, first_name, last_name, phone, shipping_address, cart_items, total_amount, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [reference, email, firstName, lastName, phone, JSON.stringify(shippingAddress), JSON.stringify(items), amountInKobo, 'pending']
-      );
-      console.log(`Order saved to database with reference: ${reference}`);
-    } catch (dbError) {
-      console.error('Error saving order to database:', dbError);
-      return res.status(500).json({ success: false, message: 'Failed to save order.' });
-    }
+    // Initialize Paystack transaction
+    const result = await axios.post(
+      'https://api.paystack.co/transaction/initialize',
+      {
+        email,
+        amount: amountInKobo,
+        reference,
+        callback_url: callbackUrl,
+        metadata
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    const result = await initializeTransaction(email, amountInKobo, reference, callbackUrl, metadata);
-
-    if (result.success) {
-      res.json({
+    if (result.data.status) {
+      return res.json({
         success: true,
-        authorizationUrl: result.data.authorization_url,
+        authorizationUrl: result.data.data.authorization_url
       });
     } else {
-      await db.run(`UPDATE orders SET status = 'failed' WHERE reference = ?`, [reference]);
-      res.status(500).json({ success: false, message: result.message });
+      return res.status(500).json({ success: false, message: result.data.message });
     }
   } catch (error) {
-    console.error('Error in initializeCheckout:', error);
-    res.status(500).json({ success: false, message: 'Internal server error.' });
+    console.error('Paystack init error:', error.response?.data || error.message);
+    return res.status(500).json({ success: false, message: 'Payment initialization failed.' });
   }
 }
