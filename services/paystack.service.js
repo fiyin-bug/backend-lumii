@@ -1,6 +1,6 @@
 // services/paystack.service.js
-const axios = require("axios");
-const { paystackSecretKey } = require("../config/paystack.config");
+import axios from "axios";
+import paystackConfig from "../config/paystack.config.js";
 
 const PAYSTACK_API_URL = 'https://api.paystack.co';
 
@@ -14,7 +14,7 @@ const PAYSTACK_API_URL = 'https://api.paystack.co';
  * @returns {Promise<{success: boolean, data?: object, message?: string}>}
  */
 const initializeTransaction = async (email, amountInKobo, reference, callbackUrl, metadata = {}) => {
-  if (!paystackSecretKey) {
+  if (!paystackConfig.paystackSecretKey) {
      console.error("Paystack secret key is not configured.");
      return { success: false, message: "Payment service configuration error." };
   }
@@ -30,7 +30,7 @@ const initializeTransaction = async (email, amountInKobo, reference, callbackUrl
       },
       {
         headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
+          Authorization: `Bearer ${paystackConfig.paystackSecretKey}`,
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache' // Recommended by Paystack
         },
@@ -56,7 +56,7 @@ const initializeTransaction = async (email, amountInKobo, reference, callbackUrl
  * @returns {Promise<{success: boolean, data?: object, message?: string}>}
  */
 const verifyTransaction = async (reference) => {
-   if (!paystackSecretKey) {
+   if (!paystackConfig.paystackSecretKey) {
      console.error("Paystack secret key is not configured.");
      return { success: false, message: "Payment service configuration error." };
    }
@@ -65,7 +65,7 @@ const verifyTransaction = async (reference) => {
             `${PAYSTACK_API_URL}/transaction/verify/${reference}`,
             {
                 headers: {
-                    Authorization: `Bearer ${paystackSecretKey}`,
+                    Authorization: `Bearer ${paystackConfig.paystackSecretKey}`,
                     'Cache-Control': 'no-cache' // Recommended by Paystack
                 },
             }
@@ -91,7 +91,4 @@ const verifyTransaction = async (reference) => {
    }
 };
 
-module.exports = {
-  initializeTransaction,
-  verifyTransaction,
-};
+export { initializeTransaction, verifyTransaction };

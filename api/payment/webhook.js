@@ -1,8 +1,8 @@
-const { verifyTransaction } = require('../../services/paystack.service');
-const db = require('../../config/db.config');
-const { sendBusinessNotification, sendBuyerInvoice } = require('../../services/email.service');
-const { paystackConfig } = require('../../config/paystack.config');
-const crypto = require('crypto');
+import { verifyTransaction } from '../../services/paystack.service.js';
+import db from '../../config/db.config.js';
+import { sendBusinessNotification, sendBuyerInvoice } from '../../services/email.service.js';
+import paystackConfig from '../../config/paystack.config.js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

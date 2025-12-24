@@ -1,6 +1,6 @@
-const { verifyTransaction } = require('../../services/paystack.service');
-const db = require('../../config/db.config');
-const { sendBusinessNotification, sendBuyerInvoice } = require('../../services/email.service');
+import { verifyTransaction } from '../../services/paystack.service.js';
+import db from '../../config/db.config.js';
+import { sendBusinessNotification, sendBuyerInvoice } from '../../services/email.service.js';
 
 export default async function handler(req, res) {
   // Enable CORS

@@ -1,15 +1,15 @@
-const nodemailer = require('nodemailer');
-const { emailConfig } = require('../config');
+import nodemailer from 'nodemailer';
+import config from '../config/index.js';
 
 let transporter;
 
 // Initialize transporter only if email config is valid
-if (emailConfig.host && emailConfig.auth.user && emailConfig.auth.pass) {
+if (config.emailConfig.host && config.emailConfig.auth.user && config.emailConfig.auth.pass) {
   transporter = nodemailer.createTransport({
-    host: emailConfig.host,
-    port: emailConfig.port,
-    secure: emailConfig.secure,
-    auth: emailConfig.auth,
+    host: config.emailConfig.host,
+    port: config.emailConfig.port,
+    secure: config.emailConfig.secure,
+    auth: config.emailConfig.auth,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
@@ -32,7 +32,7 @@ if (emailConfig.host && emailConfig.auth.user && emailConfig.auth.pass) {
  * @param {object} orderDetails Data retrieved from Paystack verification, including metadata.
  */
 const sendBusinessNotification = async (orderDetails) => {
-  if (!transporter || !emailConfig.businessNotificationEmail) {
+  if (!transporter || !config.emailConfig.businessNotificationEmail) {
     console.warn('Business email notifications are skipped due to missing configuration or transporter error.');
     return;
   }
@@ -71,8 +71,8 @@ const sendBusinessNotification = async (orderDetails) => {
 
   // Construct Mail Options
   const mailOptions = {
-    from: emailConfig.from,
-    to: emailConfig.businessNotificationEmail,
+    from: config.emailConfig.from,
+    to: config.emailConfig.businessNotificationEmail,
     subject: `[Lumis Jewelry] New Order Paid - Ref: ${reference}`,
     text: `A new order has been successfully paid for.\n
 ========================================
@@ -147,7 +147,7 @@ Payment Details:
   };
 
   try {
-    console.log(`Attempting to send notification email to ${emailConfig.businessNotificationEmail} for ref ${reference}...`);
+    console.log(`Attempting to send notification email to ${config.emailConfig.businessNotificationEmail} for ref ${reference}...`);
     const info = await transporter.sendMail(mailOptions);
     console.log(`Business notification email sent successfully for ref ${reference}. Message ID: ${info.messageId}`);
   } catch (error) {
@@ -196,7 +196,7 @@ const sendBuyerInvoice = async (orderDetails) => {
 
   // Construct Mail Options
   const mailOptions = {
-    from: emailConfig.from,
+    from: config.emailConfig.from,
     to: customerEmail,
     subject: `Your Lumis Jewelry Order Invoice - Ref: ${reference}`,
     text: `Dear ${customerName},\n
@@ -275,4 +275,4 @@ Best regards,\nLumis Pretty Collection 💎
   }
 };
 
-module.exports = { sendBusinessNotification, sendBuyerInvoice };
+export { sendBusinessNotification, sendBuyerInvoice };

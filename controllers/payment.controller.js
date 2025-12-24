@@ -1,11 +1,11 @@
-const { initializeTransaction, verifyTransaction } = require('../services/paystack.service');
-const { sendBusinessNotification, sendBuyerInvoice } = require('../services/email.service');
-const db = require('../config/db.config');
-const { paystackConfig } = require('../config/paystack.config');
-const { clientUrl } = require('../config');
-const crypto = require('crypto');
+import { initializeTransaction, verifyTransaction } from '../services/paystack.service.js';
+import { sendBusinessNotification, sendBuyerInvoice } from '../services/email.service.js';
+import db from '../config/db.config.js';
+import paystackConfig from '../config/paystack.config.js';
+import config from '../config/index.js';
+import crypto from 'crypto';
 
-exports.initializeCheckout = async (req, res) => {
+const initializeCheckout = async (req, res) => {
   try {
     const { email, firstName, lastName, phone, shippingAddress, items } = req.body;
 
@@ -42,10 +42,8 @@ exports.initializeCheckout = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Minimum order amount is ₦100.' });
     }
 
-    const { apiBaseUrl, clientUrl } = require('../config');
-
     // Send callback URL directly to frontend using CLIENT_URL from environment
-    const callbackUrl = `${clientUrl}/payment/callback`;
+    const callbackUrl = `${config.clientUrl}/payment/callback`;
 
     // Save order to database
     try {
@@ -78,14 +76,14 @@ exports.initializeCheckout = async (req, res) => {
   }
 };
 
-exports.handlePaystackCallback = async (req, res) => {
+const handlePaystackCallback = async (req, res) => {
   const { reference } = req.query;
 
   const frontendCallbackPath = '/payment/callback';
-  const frontendCallbackUrl = `${clientUrl}${frontendCallbackPath}?reference=${reference}`;
+  const frontendCallbackUrl = `${config.clientUrl}${frontendCallbackPath}?reference=${reference}`;
 
   if (!reference) {
-    const frontendFailureUrl = `${clientUrl}${frontendCallbackPath}?status=failed&message=no_reference`;
+    const frontendFailureUrl = `${config.clientUrl}${frontendCallbackPath}?status=failed&message=no_reference`;
     console.warn(`Received Paystack callback without reference. Redirecting to frontend failure URL: ${frontendFailureUrl}`);
     return res.redirect(302, frontendFailureUrl);
   }
@@ -94,7 +92,7 @@ exports.handlePaystackCallback = async (req, res) => {
   res.redirect(302, frontendCallbackUrl);
 };
 
-exports.verifyPaymentStatus = async (req, res) => {
+const verifyPaymentStatus = async (req, res) => {
   try {
     const { reference } = req.query;
 
@@ -166,7 +164,7 @@ exports.verifyPaymentStatus = async (req, res) => {
   }
 };
 
-exports.handlePaystackWebhook = async (req, res) => {
+const handlePaystackWebhook = async (req, res) => {
   try {
     // Verify webhook signature
     const secret = paystackConfig.paystackSecretKey;
@@ -232,9 +230,9 @@ exports.handlePaystackWebhook = async (req, res) => {
   }
 };
 
-module.exports = {
-  initializeCheckout: exports.initializeCheckout,
-  handlePaystackCallback: exports.handlePaystackCallback,
-  verifyPaymentStatus: exports.verifyPaymentStatus,
-  handlePaystackWebhook: exports.handlePaystackWebhook,
+export default {
+  initializeCheckout,
+  handlePaystackCallback,
+  verifyPaymentStatus,
+  handlePaystackWebhook,
 };

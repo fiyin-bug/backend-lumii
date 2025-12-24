@@ -1,5 +1,5 @@
-const sqlite3 = require("sqlite3");
-const path = require("path");
+import sqlite3 from "sqlite3";
+import path from "path";
 
 let db;
 
@@ -34,22 +34,22 @@ function init() {
 
 init();
 
-module.exports = {
-  run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      db.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve(this);
-      });
+const run = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve(this);
     });
-  },
-
-  get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      db.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
+  });
 };
+
+const get = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+};
+
+export default { run, get };

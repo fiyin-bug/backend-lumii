@@ -1,6 +1,6 @@
 // routes/index.js
-const express = require('express');
-const paymentRoutes = require('./payment.routes');
+import express from 'express';
+import paymentRoutes from './payment.routes';
 
 const router = express.Router();
 
@@ -12,4 +12,4 @@ router.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-module.exports = router;
+export default router;

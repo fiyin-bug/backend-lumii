@@ -1,7 +1,7 @@
 // config/paystack.config
-require('dotenv').config();
+import 'dotenv/config';
 
-module.exports = {
+export default {
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
   paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY,
 };
