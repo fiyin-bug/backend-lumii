@@ -1,14 +1,12 @@
-exports.handler = function(req, res) {
-  res.status(200).json({
-    message: "Lumii Backend API - Vercel Serverless",
-    version: "1.0.0",
-    endpoints: {
-      health: "/api/health",
-      initialize: "/api/payment/initialize",
-      verify: "/api/payment/verify",
-      callback: "/api/payment/callback",
-      webhook: "/api/payment/webhook"
-    },
-    environment: process.env.NODE_ENV || "development"
-  });
-}
+import express from 'express';
+import cors from 'cors';
+import paymentRoutes from '../routes/index.js';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/api', paymentRoutes);
+
+export default app;
