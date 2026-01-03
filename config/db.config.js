@@ -1,5 +1,5 @@
-import sqlite3 from "sqlite3";
-import path from "path";
+const sqlite3 = require("sqlite3");
+const path = require("path");
 
 let db;
 
@@ -52,4 +52,4 @@ const get = (sql, params = []) => {
   });
 };
 
-export default { run, get };
+module.exports = { run, get };

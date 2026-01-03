@@ -1,6 +1,6 @@
-import 'dotenv/config';
+require('dotenv').config();
 
-export default {
+module.exports = {
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT || '587', 10),
   secure: process.env.EMAIL_SECURE === 'true',

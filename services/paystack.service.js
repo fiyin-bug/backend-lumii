@@ -1,6 +1,6 @@
 // services/paystack.service.js
-import axios from "axios";
-import paystackConfig from "../config/paystack.config.js";
+const axios = require("axios");
+const paystackConfig = require("../config/paystack.config.js");
 
 const PAYSTACK_API_URL = 'https://api.paystack.co';
 
@@ -91,4 +91,4 @@ const verifyTransaction = async (reference) => {
    }
 };
 
-export { initializeTransaction, verifyTransaction };
+module.exports = { initializeTransaction, verifyTransaction };

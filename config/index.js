@@ -1,9 +1,9 @@
 // config/index.js
-import 'dotenv/config';
-import paystackConfig from './paystack.config.js';
-import emailConfig from './email.config.js';
+require('dotenv').config();
+const paystackConfig = require('./paystack.config.js');
+const emailConfig = require('./email.config.js');
 
-export default {
+module.exports = {
   port: process.env.PORT || 5000,
   env: process.env.NODE_ENV || 'development',
   apiBaseUrl: process.env.API_BASE_URL,

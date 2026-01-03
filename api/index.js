@@ -1,12 +1,21 @@
-import express from 'express';
-import cors from 'cors';
-import paymentRoutes from '../routes/index.js';
+const express = require('express');
+const cors = require('cors');
+const paymentRoutes = require('../routes/index.js');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: true, // Allows all for testing; change to your frontend URL later
+  credentials: true
+}));
 app.use(express.json());
 
+// Base API route
+app.get('/api/health', (req, res) => {
+  res.json({ status: "Backend is operational", timestamp: new Date() });
+});
+
+// Mount your routes
 app.use('/api', paymentRoutes);
 
-export default app;
+module.exports = app;
