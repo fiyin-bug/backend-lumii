@@ -1,9 +1,9 @@
-const { initializeTransaction, verifyTransaction } = require('../services/paystack.service.js');
-const { sendBusinessNotification, sendBuyerInvoice } = require('../services/email.service.js');
-const db = require('../config/db.config.js');
-const paystackConfig = require('../config/paystack.config.js');
-const config = require('../config/index.js');
-const crypto = require('crypto');
+import { initializeTransaction, verifyTransaction } from '../services/paystack.service.js';
+import { sendBusinessNotification, sendBuyerInvoice } from '../services/email.service.js';
+import db from '../config/db.config.js';
+import paystackConfig from '../config/paystack.config.js';
+import config from '../config/index.js';
+import crypto from 'crypto';
 
 const initializeCheckout = async (req, res) => {
   try {
@@ -230,7 +230,7 @@ const handlePaystackWebhook = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   initializeCheckout,
   handlePaystackCallback,
   verifyPaymentStatus,

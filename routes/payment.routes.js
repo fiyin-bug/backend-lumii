@@ -1,6 +1,6 @@
-const express = require('express');
-const cors = require('cors');
-const paymentController = require('../controllers/payment.controller');
+import express from 'express';
+import cors from 'cors';
+import paymentController from '../controllers/payment.controller.js';
 
 const router = express.Router();
 
@@ -36,4 +36,4 @@ router.get('/verify', paymentController.verifyPaymentStatus);
 // POST webhook
 router.post('/webhook', paymentController.handlePaystackWebhook);
 
-module.exports = router;
+export default router;

@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const config = require('../config/index.js');
+import nodemailer from 'nodemailer';
+import config from '../config/index.js';
 
 let transporter;
 
@@ -275,4 +275,4 @@ Best regards,\nLumis Pretty Collection 💎
   }
 };
 
-module.exports = { sendBusinessNotification, sendBuyerInvoice };
+export { sendBusinessNotification, sendBuyerInvoice };
