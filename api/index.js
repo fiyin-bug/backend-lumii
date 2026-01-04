@@ -1,16 +1,14 @@
 import express from 'express';
 import cors from 'cors';
-// Path must include .js extension for ES Modules
-import paymentRoutes from '../routes/index.js';
+import paymentRoutes from '../routes/index.js'; // Ensure path is correct
 
 const app = express();
-
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Verify connection route
+// The "Truth" test route
 app.get('/api/health', (req, res) => {
-  res.json({ status: "online", message: "Vercel Handshake Successful" });
+  res.json({ status: "success", message: "Backend is LIVE and SSL is fixed" });
 });
 
 app.use('/api', paymentRoutes);
