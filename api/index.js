@@ -23,6 +23,11 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ status: "success", message: "Backend redeployed" });
+});
+
 // 3. Mount routes
 // Note: If vercel.json rewrites /api/ to /api/index.js,
 // your routes should match the remaining path.
