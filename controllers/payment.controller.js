@@ -6,6 +6,9 @@ import config from '../config/index.js';
 import crypto from 'crypto';
 
 const initializeCheckout = async (req, res) => {
+  console.log("PAYMENT ROUTE HIT with body:", JSON.stringify(req.body, null, 2));
+  console.log("PAYMENT ROUTE HEADERS:", req.headers);
+
   try {
     const { email, firstName, lastName, phone, shippingAddress, items } = req.body;
 

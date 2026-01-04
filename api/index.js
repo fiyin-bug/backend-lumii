@@ -2,6 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import paymentRoutes from '../routes/index.js';
 
+// Global error catcher for Vercel debugging
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
 const app = express();
 
 // Proactive CORS: Allow everything for now to stop the Network Error
