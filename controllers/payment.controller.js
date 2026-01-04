@@ -75,8 +75,14 @@ const initializeCheckout = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error in initializeCheckout:', error);
-    res.status(500).json({ success: false, message: 'Internal server error.' });
+    // This prints the real error to your Vercel logs
+    console.error("CRASH ERROR:", error.response?.data || error.message);
+
+    // This sends the real error back to your frontend React app
+    res.status(500).json({
+      error: "Payment Initialization Failed",
+      rawError: error.response?.data || error.message
+    });
   }
 };
 
