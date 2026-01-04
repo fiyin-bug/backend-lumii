@@ -18,9 +18,14 @@ app.options('*', (req, res) => {
   res.status(200).send();
 });
 
-// Health check to verify the server is actually running
+// Add this so hitting https://backend-lumii.vercel.app/ returns something
+app.get('/', (req, res) => {
+  res.status(200).send("Lumii Backend is Active");
+});
+
+// The health check we discussed
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is alive' });
+  res.status(200).json({ status: 'ok' });
 });
 
 app.use('/api', paymentRoutes);
