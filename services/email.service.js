@@ -10,19 +10,23 @@ if (config.emailConfig.host && config.emailConfig.auth.user && config.emailConfi
     port: config.emailConfig.port,
     secure: config.emailConfig.secure,
     auth: config.emailConfig.auth,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    // Short timeouts to prevent serverless function crashes
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
   });
 
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('Nodemailer configuration error:', error);
-      transporter = null;
-    } else {
-      console.log('Nodemailer is configured correctly. Server is ready to take messages.');
-    }
-  });
+  // COMMENTED OUT: transporter.verify() was causing serverless function timeouts
+  // transporter.verify((error, success) => {
+  //   if (error) {
+  //     console.error('Nodemailer configuration error:', error);
+  //     transporter = null;
+  //   } else {
+  //     console.log('Nodemailer is configured correctly. Server is ready to take messages.');
+  //   }
+  // });
+
+  console.log('Nodemailer configured (verify disabled to prevent timeouts)');
 } else {
   console.warn("Email service is not fully configured in .env. Email notifications will be skipped.");
 }

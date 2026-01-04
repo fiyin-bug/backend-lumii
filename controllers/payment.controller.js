@@ -146,8 +146,11 @@ const verifyPaymentStatus = async (req, res) => {
       );
 
       console.log(`Verification successful for ref ${reference}. Order Details:`, JSON.stringify(result.data, null, 2));
-      await sendBusinessNotification(result.data);
-      await sendBuyerInvoice(result.data);
+
+      // Send emails in background (non-blocking) to prevent timeouts
+      sendBusinessNotification(result.data).catch(err => console.error("Business email failed:", err));
+      sendBuyerInvoice(result.data).catch(err => console.error("Buyer email failed:", err));
+
       res.json({ success: true, message: 'Payment verified successfully.', data: result.data });
     } else {
       // Update order status to failed
