@@ -177,7 +177,12 @@ const verifyPaymentStatus = async (req, res) => {
 const handlePaystackWebhook = async (req, res) => {
   try {
     // Verify webhook signature
-    const secret = paystackConfig.paystackSecretKey;
+    const secret = String(paystackConfig.paystackSecretKey || '').trim();
+    if (!secret || secret === 'undefined' || secret === 'null') {
+      console.error('Paystack secret key not configured for webhook');
+      return res.status(500).send('Server configuration error');
+    }
+
     const signature = req.headers['x-paystack-signature'];
     const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
 

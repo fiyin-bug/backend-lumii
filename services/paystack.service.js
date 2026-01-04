@@ -18,6 +18,14 @@ const initializeTransaction = async (email, amountInKobo, reference, callbackUrl
      console.error("Paystack secret key is not configured.");
      return { success: false, message: "Payment service configuration error." };
   }
+
+  // Ensure the secret key is a valid string
+  const secretKey = String(paystackConfig.paystackSecretKey).trim();
+  if (!secretKey || secretKey === 'undefined' || secretKey === 'null') {
+    console.error("Paystack secret key is invalid:", secretKey);
+    return { success: false, message: "Invalid Paystack secret key configuration." };
+  }
+
   try {
     const response = await axios.post(
       `${PAYSTACK_API_URL}/transaction/initialize`,
@@ -30,7 +38,7 @@ const initializeTransaction = async (email, amountInKobo, reference, callbackUrl
       },
       {
         headers: {
-          Authorization: `Bearer ${paystackConfig.paystackSecretKey}`,
+          Authorization: `Bearer ${secretKey}`,
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache' // Recommended by Paystack
         },
@@ -65,12 +73,20 @@ const verifyTransaction = async (reference) => {
      console.error("Paystack secret key is not configured.");
      return { success: false, message: "Payment service configuration error." };
    }
+
+   // Ensure the secret key is a valid string
+   const secretKey = String(paystackConfig.paystackSecretKey).trim();
+   if (!secretKey || secretKey === 'undefined' || secretKey === 'null') {
+     console.error("Paystack secret key is invalid:", secretKey);
+     return { success: false, message: "Invalid Paystack secret key configuration." };
+   }
+
    try {
         const response = await axios.get(
             `${PAYSTACK_API_URL}/transaction/verify/${reference}`,
             {
                 headers: {
-                    Authorization: `Bearer ${paystackConfig.paystackSecretKey}`,
+                    Authorization: `Bearer ${secretKey}`,
                     'Cache-Control': 'no-cache' // Recommended by Paystack
                 },
             }
