@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // ✅ CORRECT: Use HTTPS Vercel URL
 const api = axios.create({
-  baseURL: 'https://backend-lumii-emgg59ccv-davids-projects-b37cdfcb.vercel.app/api',
+  baseURL: 'https://backend-lumii-plm7dk0yz-davids-projects-b37cdfcb.vercel.app/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
