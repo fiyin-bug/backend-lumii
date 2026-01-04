@@ -2,7 +2,7 @@
   "name": "backend-lumii",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
     "start": "node server.local.js",
