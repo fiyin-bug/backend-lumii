@@ -46,7 +46,12 @@ const initializeTransaction = async (email, amountInKobo, reference, callbackUrl
   } catch (error) {
     console.error("Paystack Initialization HTTP Error:", error.response ? error.response.data : error.message);
     const errorMessage = error.response?.data?.message || "Failed to communicate with payment service.";
-    return { success: false, message: errorMessage };
+    return {
+      success: false,
+      message: errorMessage,
+      error: error.response?.data || error.message,
+      statusCode: error.response?.status
+    };
   }
 };
 

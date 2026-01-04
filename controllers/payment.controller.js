@@ -68,7 +68,11 @@ const initializeCheckout = async (req, res) => {
     } else {
       // Update order status to failed if Paystack initialization fails
       await db.run(`UPDATE orders SET status = 'failed' WHERE reference = ?`, [reference]);
-      res.status(500).json({ success: false, message: result.message });
+      res.status(result.statusCode || 500).json({
+        success: false,
+        message: result.message,
+        error: result.error
+      });
     }
   } catch (error) {
     console.error('Error in initializeCheckout:', error);
