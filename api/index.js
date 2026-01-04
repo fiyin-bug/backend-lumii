@@ -1,17 +1,18 @@
 import express from 'express';
 import cors from 'cors';
+// Path must include .js extension for ES Modules
 import paymentRoutes from '../routes/index.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
+// Verify connection route
 app.get('/api/health', (req, res) => {
-  res.json({ status: "Backend is operational", mode: "ES Modules" });
+  res.json({ status: "online", message: "Vercel Handshake Successful" });
 });
 
-// Mount your payment routes
 app.use('/api', paymentRoutes);
 
 export default app;
