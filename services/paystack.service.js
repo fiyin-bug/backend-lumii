@@ -13,9 +13,10 @@ export const initializeTransaction = async (email, amountInKobo, reference, call
   }
 
   try {
-    // 2. Paystack requires AMOUNT to be an INTEGER. 
+    // 2. Paystack requires AMOUNT to be an INTEGER.
     // If it has a decimal point, Paystack redirects to that 404 "test-url".
-    const cleanAmount = Math.floor(amountInKobo); 
+    // Ensure amount is a proper integer by parsing and flooring
+    const cleanAmount = Math.floor(parseFloat(amountInKobo) || 0);
 
     const response = await axios.post(
       `${PAYSTACK_API_URL}/transaction/initialize`,

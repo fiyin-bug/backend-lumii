@@ -32,10 +32,16 @@ const initializeCheckout = async (req, res) => {
     // Calculate amount - Ensure it's an integer for Paystack
     const totalAmount = items.reduce((total, item) => {
       const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : item.price;
-      return total + (price * item.quantity);
+      const quantity = parseInt(item.quantity) || 0;
+      return total + (price * quantity);
     }, 0);
 
     const amountInKobo = Math.round(totalAmount * 100);
+
+    // Additional validation to prevent test-url issues
+    if (!Number.isInteger(amountInKobo) || amountInKobo <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid amount calculated.' });
+    }
 
     if (amountInKobo < 10000) { // ₦100 minimum
       return res.status(400).json({ success: false, message: 'Minimum order amount is ₦100.' });
