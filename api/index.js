@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import paymentRoutes from '../routes/index.js';
+import db from '../config/db.config.js';
 
 // Global error catcher for Vercel debugging
 process.on('uncaughtException', (err) => {
