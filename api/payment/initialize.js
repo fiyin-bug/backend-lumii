@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   // Route to payment handler
-  if (req.method === 'POST' && req.url === '/api/payment/initialize') {
+  if (req.method === 'POST') {
     try {
       // Import and use the payment route handler
       const paymentHandler = paymentRoutes.stack.find(layer =>
