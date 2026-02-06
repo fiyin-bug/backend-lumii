@@ -2,13 +2,7 @@
   "version": 2,
   "functions": {
     "api/payment/initialize.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "@vercel/node"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/payment/initialize",
-      "dest": "/api/payment/initialize.js"
-    }
-  ]
+  }
 }
