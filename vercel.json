@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "api/payment/initialize.js": {
-      "runtime": "@vercel/node"
+  "builds": [
+    {
+      "src": "api/payment/initialize.js",
+      "use": "@vercel/node"
     }
-  }
+  ]
 }
