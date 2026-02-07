@@ -16,23 +16,13 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // 1. Allow internal requests (like Postman or server-to-server)
-    if (!origin) return callback(null, true);
-
-    // 2. Allow ANY port on localhost (Fixes your Vite port-changing issue)
-    const isLocalhost = /^http:\/\/localhost(:\d+)?$/.test(origin);
-    
-    // 3. Allow your live production domains
-    const isAllowedDomain = allowedOrigins.includes(origin) || origin.includes('vercel.app');
-
-    if (isLocalhost || isAllowedDomain) {
-      callback(null, true);
-    } else {
-      console.error(`❌ CORS Blocked: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    "https://lumii-jthu.vercel.app",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002"
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-paystack-signature']
