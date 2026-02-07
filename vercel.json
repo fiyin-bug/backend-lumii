@@ -2,8 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/payment/initialize.js",
-      "use": "@vercel/node"
+      "src": "server.js",
+      "use": "@vercel/node@14.17.0"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
     }
   ]
 }
