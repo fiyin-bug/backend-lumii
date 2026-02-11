@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import config from '../config/index.js';
 
 let transporter;
+const websiteUrl = config.clientUrl || 'https://lumiprettycollection.com';
 
 // Initialize transporter only if email config is valid
 if (config.emailConfig.host && config.emailConfig.auth.user && config.emailConfig.auth.pass) {
@@ -52,15 +53,20 @@ const sendBusinessNotification = async (orderDetails) => {
   const paidAt = orderDetails?.paid_at || orderDetails?.created_at;
   const paymentTime = paidAt ? new Date(paidAt).toLocaleString() : 'N/A';
 
+  const formatItemPrice = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
+  };
+
   // Format items
   let itemsListText = 'Item details not available in metadata.';
   let itemsListHtml = '<li>Item details not available in metadata.</li>';
   if (orderDetails?.metadata?.cart_items && Array.isArray(orderDetails.metadata.cart_items)) {
     itemsListText = orderDetails.metadata.cart_items.map(item =>
-      `- ${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${(item.price / 100).toFixed(2)})`
+      `- ${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${formatItemPrice(item.price)})`
     ).join('\n');
     itemsListHtml = orderDetails.metadata.cart_items.map(item =>
-      `<li>${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${(item.price / 100).toFixed(2)})</li>`
+      `<li>${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${formatItemPrice(item.price)})</li>`
     ).join('');
   }
 
@@ -142,7 +148,7 @@ Payment Details:
           </div>
           <div class="footer">
             <p>Thank you for choosing Lumis Pretty Collection 💎</p>
-            <p><a href="http://localhost:5174">Visit our website</a></p>
+            <p><a href="${websiteUrl}">Visit our website</a></p>
           </div>
         </div>
       </body>
@@ -177,15 +183,20 @@ const sendBuyerInvoice = async (orderDetails) => {
   const paidAt = orderDetails?.paid_at || orderDetails?.created_at;
   const paymentTime = paidAt ? new Date(paidAt).toLocaleString() : 'N/A';
 
+  const formatItemPrice = (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
+  };
+
   // Format items
   let itemsListText = 'Item details not available.';
   let itemsListHtml = '<li>Item details not available.</li>';
   if (orderDetails?.metadata?.cart_items && Array.isArray(orderDetails.metadata.cart_items)) {
     itemsListText = orderDetails.metadata.cart_items.map(item =>
-      `- ${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${(item.price / 100).toFixed(2)})`
+      `- ${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${formatItemPrice(item.price)})`
     ).join('\n');
     itemsListHtml = orderDetails.metadata.cart_items.map(item =>
-      `<li>${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${(item.price / 100).toFixed(2)})</li>`
+      `<li>${item.name || 'N/A'} (Qty: ${item.quantity || 'N/A'}, Price: NGN ${formatItemPrice(item.price)})</li>`
     ).join('');
   }
 
@@ -262,7 +273,7 @@ Best regards,\nLumis Pretty Collection 💎
           </div>
           <div class="footer">
             <p>Thank you for choosing Lumis Pretty Collection 💎</p>
-            <p><a href="http://localhost:5174">Visit our website</a></p>
+            <p><a href="${websiteUrl}">Visit our website</a></p>
           </div>
         </div>
       </body>
