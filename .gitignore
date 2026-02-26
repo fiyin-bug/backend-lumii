@@ -3,3 +3,4 @@ node_modules/
 *.log
 database.sqlite
 .vercel
+.env*.local

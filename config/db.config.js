@@ -16,6 +16,7 @@ if (process.env.VERCEL) {
 }
 
 function init() {
+  // Core order table
   db.run(`
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,9 +28,45 @@ function init() {
       shipping_address TEXT,
       cart_items TEXT,
       total_amount INTEGER,
-      status TEXT DEFAULT 'pending'
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Payment records used by verifyPaymentStatus
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      reference TEXT UNIQUE,
+      paystack_id TEXT,
+      amount INTEGER,
+      currency TEXT,
+      status TEXT,
+      gateway_response TEXT,
+      paid_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Lightweight runtime migration for existing databases
+  db.all(`PRAGMA table_info(orders)`, [], (err, columns = []) => {
+    if (err) {
+      console.error('DB migration check failed for orders:', err.message);
+      return;
+    }
+
+    const names = new Set(columns.map((c) => c.name));
+
+    if (!names.has('created_at')) {
+      db.run(`ALTER TABLE orders ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    }
+
+    if (!names.has('updated_at')) {
+      db.run(`ALTER TABLE orders ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    }
+  });
 }
 
 init();

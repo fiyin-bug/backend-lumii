@@ -47,32 +47,44 @@ const initializeCheckout = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Minimum order amount is ₦100.' });
     }
 
-    const callbackUrl = `${config.clientUrl}/payment/callback`;
-
-    // Save order to database
-    await db.run(
-      `INSERT INTO orders (reference, email, first_name, last_name, phone, shipping_address, cart_items, total_amount, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [reference, email, firstName, lastName, phone, JSON.stringify(shippingAddress), JSON.stringify(items), amountInKobo, 'pending']
-    );
+    const fallbackClientUrl = req.headers.origin || 'https://lumiprettycollection.com';
+    const clientBaseUrl = (config.clientUrl || fallbackClientUrl).replace(/\/$/, '');
+    const callbackUrl = `${clientBaseUrl}/payment/callback`;
 
     const result = await initializeTransaction(email, amountInKobo, reference, callbackUrl, metadata);
 
     if (result.success) {
+      // Do not allow DB write failures to block checkout initialization
+      try {
+        await db.run(
+          `INSERT INTO orders (reference, email, first_name, last_name, phone, shipping_address, cart_items, total_amount, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [reference, email, firstName, lastName, phone, JSON.stringify(shippingAddress), JSON.stringify(items), amountInKobo, 'pending']
+        );
+      } catch (dbError) {
+        console.error('Order save warning (non-blocking):', dbError.message);
+      }
+
       res.json({ success: true, authorizationUrl: result.data.authorization_url });
     } else {
-      await db.run(`UPDATE orders SET status = 'failed' WHERE reference = ?`, [reference]);
+      try {
+        await db.run(`UPDATE orders SET status = 'failed' WHERE reference = ?`, [reference]);
+      } catch (dbError) {
+        console.error('Order fail-status update warning:', dbError.message);
+      }
       res.status(result.statusCode || 500).json({ success: false, message: result.message });
     }
   } catch (error) {
     console.error("CRASH ERROR:", error.message);
-    res.status(500).json({ success: false, message: "Payment Initialization Failed" });
+    res.status(500).json({ success: false, message: error.message || "Payment Initialization Failed" });
   }
 };
 
 const handlePaystackCallback = async (req, res) => {
   const { reference } = req.query;
-  const url = `${config.clientUrl}/payment/callback?reference=${reference}`;
+  const fallbackClientUrl = req.headers.origin || 'https://lumiprettycollection.com';
+  const clientBaseUrl = (config.clientUrl || fallbackClientUrl).replace(/\/$/, '');
+  const url = `${clientBaseUrl}/payment/callback?reference=${reference}`;
   res.redirect(302, url);
 };
 

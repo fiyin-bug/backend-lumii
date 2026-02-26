@@ -9,7 +9,7 @@ export const initializeTransaction = async (email, amountInKobo, reference, call
   const secretKey = String(paystackConfig.paystackSecretKey || '').trim();
   
   if (!secretKey || secretKey === 'undefined') {
-     return { success: false, message: "Paystack Secret Key is missing." };
+     return { success: false, statusCode: 500, message: "Paystack Secret Key is missing." };
   }
 
   try {
@@ -33,6 +33,7 @@ export const initializeTransaction = async (email, amountInKobo, reference, call
           Authorization: `Bearer ${secretKey}`,
           'Content-Type': 'application/json'
         },
+        timeout: 15000,
       }
     );
 
@@ -40,11 +41,12 @@ export const initializeTransaction = async (email, amountInKobo, reference, call
        return { success: true, data: response.data.data }; 
     } 
     
-    return { success: false, message: response.data?.message || "Initialization failed" };
+    return { success: false, statusCode: 502, message: response.data?.message || "Initialization failed" };
   } catch (error) {
     console.error("❌ Paystack API Error:", error.response?.data || error.message);
     return {
       success: false,
+      statusCode: error.response?.status || 502,
       message: error.response?.data?.message || "Communication Error",
     };
   }
@@ -55,7 +57,7 @@ export const verifyTransaction = async (reference) => {
    try {
         const response = await axios.get(
             `${PAYSTACK_API_URL}/transaction/verify/${encodeURIComponent(reference)}`,
-            { headers: { Authorization: `Bearer ${secretKey}` } }
+            { headers: { Authorization: `Bearer ${secretKey}` }, timeout: 15000 }
         );
         if (response.data?.status === true) return { success: true, data: response.data.data };
         return { success: false, message: "Verification failed" };
