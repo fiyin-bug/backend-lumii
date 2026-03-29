@@ -2,7 +2,7 @@ import { initializeTransaction, verifyTransaction } from '../services/paystack.s
 import { sendBusinessNotification, sendBuyerInvoice } from '../services/email.service.js';
 import db from '../config/db.config.js';
 import config from '../config/index.js';
-
+import crypto from 'crypto';
 const initializeCheckout = async (req, res) => {
   try {
     const { email, firstName, lastName, phone, shippingAddress, items } = req.body;
@@ -177,8 +177,62 @@ const verifyPaymentStatus = async (req, res) => {
 };
 
 const handlePaystackWebhook = async (req, res) => {
-  // Webhook logic placeholder
-  return res.status(200).send('Webhook processed');
+  try {
+    const payload = req.body;
+    const header = req.headers['x-paystack-signature'];
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+
+    if (!header || !secret) {
+      console.warn('Webhook: Missing signature or secret key');
+      return res.status(400).json({ error: 'Missing signature or secret key' });
+    }
+
+    const generatedSignature = crypto
+      .createHmac('sha512', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex');
+
+    if (generatedSignature !== header) {
+      console.warn('Webhook: Invalid signature');
+      return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    if (payload.event === 'charge.success') {
+      const reference = payload.data.reference;
+      console.log('Webhook: Processing successful payment for reference:', reference);
+
+      const existingPayment = await db.get(`SELECT * FROM payments WHERE reference = ?`, [reference]);
+      if (existingPayment && existingPayment.status === 'success') {
+        console.log('Webhook: Payment already processed for reference:', reference);
+        return res.status(200).send('Webhook processed');
+      }
+
+      const result = await verifyTransaction(reference);
+      if (result.success) {
+        await db.run(`UPDATE orders SET status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE reference = ?`, [reference]);
+        await db.run(`INSERT OR REPLACE INTO payments (reference, paystack_id, amount, currency, status, gateway_response, paid_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, [
+          result.data.reference,
+          result.data.id,
+          result.data.amount,
+          result.data.currency,
+          'success',
+          result.data.gateway_response,
+          result.data.paid_at,
+        ]);
+
+        const emailResults = await Promise.allSettled([
+          sendBusinessNotification(result.data),
+          sendBuyerInvoice(result.data),
+        ]);
+        console.log('Webhook: Email results:', emailResults);
+      }
+    }
+
+    return res.status(200).send('Webhook processed');
+  } catch (error) {
+    console.error('Webhook Error:', error);
+    return res.status(500).json({ error: 'Webhook processing failed' });
+  }
 };
 
 export default {
