@@ -50,6 +50,17 @@ function init() {
     )
   `);
 
+  // Email failure tracking
+  db.run(`
+    CREATE TABLE IF NOT EXISTS email_failures (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      reference TEXT,
+      email_type TEXT,
+      error_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Lightweight runtime migration for existing databases
   db.all(`PRAGMA table_info(orders)`, [], (err, columns = []) => {
     if (err) {

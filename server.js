@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import paymentRoutes from './routes/payment.routes.js'; 
 import db from './config/db.config.js';
 import paystackConfig from './config/paystack.config.js';
+import CronJob from './cron.js';
 
 // Load Environment Variables
 dotenv.config();
@@ -59,6 +60,15 @@ console.log('📦 Database initialized:', db ? 'YES' : 'NO');
 
 // --- Routes ---
 app.use('/api/payment', paymentRoutes);
+
+// --- Start Cron Job ---
+if (process.env.NODE_ENV !== 'production') {
+  const cronJob = new CronJob();
+  cronJob.start();
+} else {
+  // In production, cron job will be handled by external scheduler
+  console.log('Cron job disabled in production environment');
+}
 
 app.get('/api/health', (_req, res) => {
   res.status(hasCriticalEnvIssues ? 503 : 200).json({

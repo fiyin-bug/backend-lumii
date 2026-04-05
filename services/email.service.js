@@ -1,8 +1,13 @@
 import nodemailer from 'nodemailer';
 import config from '../config/index.js';
+import { setTimeout } from 'timers/promises';
 
 let transporter;
 const websiteUrl = config.clientUrl || 'https://lumiprettycollection.com';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+const BACKOFF_MULTIPLIER = 2;
+const MAX_BACKOFF = 30000; // 30 seconds
 
 // Initialize transporter only if email config is valid
 if (config.emailConfig.host && config.emailConfig.auth.user && config.emailConfig.auth.pass) {
@@ -85,9 +90,9 @@ const sendBusinessNotification = async (orderDetails) => {
     to: config.emailConfig.businessNotificationEmail,
     subject: `[Lumis Jewelry] New Order Paid - Ref: ${reference}`,
     text: `A new order has been successfully paid for.\n
-========================================
+=======================================
 Order Reference: ${reference}
-========================================
+=======================================
 
 Customer Details:
   Name: ${customerName}
@@ -105,7 +110,7 @@ Payment Details:
   Payment Channel: ${paymentChannel}
   Paystack Transaction ID: ${paystackId}
   Payment Time: ${paymentTime}
-========================================
+=======================================
 `,
     html: `
       <!DOCTYPE html>
@@ -156,13 +161,24 @@ Payment Details:
     `,
   };
 
-  try {
-    console.log(`Attempting to send notification email to ${config.emailConfig.businessNotificationEmail} for ref ${reference}...`);
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Business notification email sent successfully for ref ${reference}. Message ID: ${info.messageId}`);
-  } catch (error) {
-    console.error(`Error sending business notification email for ref ${reference}:`, error);
+  // Retry logic with exponential backoff for email delivery
+  let backoffDelay = RETRY_DELAY;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`Attempting to send notification email to ${config.emailConfig.businessNotificationEmail} for ref ${reference} (Attempt ${attempt}/${MAX_RETRIES})...`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Business notification email sent successfully for ref ${reference}. Message ID: ${info.messageId}`);
+      return; // Exit on success
+    } catch (error) {
+      console.error(`Error sending business notification email for ref ${reference} (Attempt ${attempt}/${MAX_RETRIES}):`, error);
+      if (attempt < MAX_RETRIES) {
+        console.log(`Retrying in ${backoffDelay}ms...`);
+        await setTimeout(backoffDelay);
+        backoffDelay = Math.min(backoffDelay * BACKOFF_MULTIPLIER, MAX_BACKOFF);
+      }
+    }
   }
+  console.error(`Failed to send business notification email after ${MAX_RETRIES} attempts for ref ${reference}`);
 };
 
 /**
@@ -281,13 +297,24 @@ Best regards,\nLumis Pretty Collection 💎
     `,
   };
 
-  try {
-    console.log(`Attempting to send invoice email to ${customerEmail} for ref ${reference}...`);
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Buyer invoice email sent successfully for ref ${reference}. Message ID: ${info.messageId}`);
-  } catch (error) {
-    console.error(`Error sending buyer invoice email for ref ${reference}:`, error);
+  // Retry logic with exponential backoff for email delivery
+  let backoffDelay = RETRY_DELAY;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`Attempting to send invoice email to ${customerEmail} for ref ${reference} (Attempt ${attempt}/${MAX_RETRIES})...`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Buyer invoice email sent successfully for ref ${reference}. Message ID: ${info.messageId}`);
+      return; // Exit on success
+    } catch (error) {
+      console.error(`Error sending buyer invoice email for ref ${reference} (Attempt ${attempt}/${MAX_RETRIES}):`, error);
+      if (attempt < MAX_RETRIES) {
+        console.log(`Retrying in ${backoffDelay}ms...`);
+        await setTimeout(backoffDelay);
+        backoffDelay = Math.min(backoffDelay * BACKOFF_MULTIPLIER, MAX_BACKOFF);
+      }
+    }
   }
+  console.error(`Failed to send buyer invoice email after ${MAX_RETRIES} attempts for ref ${reference}`);
 };
 
 export { sendBusinessNotification, sendBuyerInvoice };

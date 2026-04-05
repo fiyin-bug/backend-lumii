@@ -3,6 +3,20 @@ import { sendBusinessNotification, sendBuyerInvoice } from '../services/email.se
 import db from '../config/db.config.js';
 import config from '../config/index.js';
 import crypto from 'crypto';
+
+// Helper function to log email failures
+const logEmailFailure = async (reference, emailType, error) => {
+  try {
+    await db.run(
+      `INSERT INTO email_failures (reference, email_type, error_message, created_at)
+       VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+      [reference, emailType, error.message || error]
+    );
+    console.log(`Email failure logged for reference ${reference} (${emailType})`);
+  } catch (dbError) {
+    console.error('Failed to log email failure:', dbError);
+  }
+};
 const initializeCheckout = async (req, res) => {
   try {
     const { email, firstName, lastName, phone, shippingAddress, items } = req.body;
@@ -167,6 +181,23 @@ const verifyPaymentStatus = async (req, res) => {
       sendBusinessNotification(result.data),
       sendBuyerInvoice(result.data),
     ]);
+
+    // Handle email failures
+    const businessEmailResult = emailResults[0];
+    const buyerEmailResult = emailResults[1];
+
+    if (businessEmailResult.status === 'rejected') {
+      console.error('Failed to send business notification email:', businessEmailResult.reason);
+      // Log for monitoring
+      await logEmailFailure(result.data.reference, 'business', businessEmailResult.reason);
+    }
+
+    if (buyerEmailResult.status === 'rejected') {
+      console.error('Failed to send buyer invoice email:', buyerEmailResult.reason);
+      // Log for monitoring
+      await logEmailFailure(result.data.reference, 'buyer', buyerEmailResult.reason);
+    }
+
     console.log('Email results:', emailResults);
 
     return res.json({ success: true, data: result.data });
@@ -220,11 +251,28 @@ const handlePaystackWebhook = async (req, res) => {
           result.data.paid_at,
         ]);
 
-        const emailResults = await Promise.allSettled([
-          sendBusinessNotification(result.data),
-          sendBuyerInvoice(result.data),
-        ]);
-        console.log('Webhook: Email results:', emailResults);
+const emailResults = await Promise.allSettled([
+      sendBusinessNotification(result.data),
+      sendBuyerInvoice(result.data),
+    ]);
+
+    // Handle email failures in webhook
+    const businessEmailResult = emailResults[0];
+    const buyerEmailResult = emailResults[1];
+
+    if (businessEmailResult.status === 'rejected') {
+      console.error('Webhook: Failed to send business notification email:', businessEmailResult.reason);
+      // Log for monitoring
+      await logEmailFailure(result.data.reference, 'business', businessEmailResult.reason);
+    }
+
+    if (buyerEmailResult.status === 'rejected') {
+      console.error('Webhook: Failed to send buyer invoice email:', buyerEmailResult.reason);
+      // Log for monitoring
+      await logEmailFailure(result.data.reference, 'buyer', buyerEmailResult.reason);
+    }
+
+    console.log('Webhook: Email results:', emailResults);
       }
     }
 

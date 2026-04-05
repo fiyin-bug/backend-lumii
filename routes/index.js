@@ -7,9 +7,11 @@ const router = express.Router();
 // Mount payment routes under /api/payment
 router.use('/payment', paymentRoutes);
 
-// Simple health check route at /api/health
-router.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check route at /api/health
+import healthCheck from '../api/health.js';
+import monitoringCheck from '../api/monitoring.js';
+
+router.get('/health', healthCheck);
+router.get('/monitoring', monitoringCheck);
 
 export default router;
