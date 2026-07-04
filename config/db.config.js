@@ -71,16 +71,46 @@ function init() {
     const names = new Set(columns.map((c) => c.name));
 
     if (!names.has('created_at')) {
-      db.run(`ALTER TABLE orders ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+      db.run(`ALTER TABLE orders ADD COLUMN created_at DATETIME`);
     }
 
     if (!names.has('updated_at')) {
-      db.run(`ALTER TABLE orders ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+      db.run(`ALTER TABLE orders ADD COLUMN updated_at DATETIME`);
     }
   });
 }
 
 init();
+
+// Ensure products and admins tables exist
+db.run(`
+  CREATE TABLE IF NOT EXISTS products (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    sku TEXT,
+    description TEXT,
+    price INTEGER DEFAULT 0,
+    currency TEXT DEFAULT 'NGN',
+    images TEXT,
+    category TEXT,
+    inventory_stock INTEGER DEFAULT 0,
+    tags TEXT,
+    active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS admins (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    refresh_token TEXT,
+    role TEXT DEFAULT 'admin',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
 const run = (sql, params = []) => {
   return new Promise((resolve, reject) => {
@@ -100,4 +130,13 @@ const get = (sql, params = []) => {
   });
 };
 
-export default { run, get };
+const all = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows || []);
+    });
+  });
+};
+
+export default { run, get, all };

@@ -83,7 +83,7 @@ class CronJob {
 }
 
 // Start the cron job when this file is executed
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const cronJob = new CronJob();
   cronJob.start();
 }
